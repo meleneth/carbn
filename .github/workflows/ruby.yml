@@ -16,6 +16,8 @@ jobs:
       - uses: ruby/setup-ruby@v1
         with:
           ruby-version: ${{ matrix.ruby }}
+      - name: Check Ruby syntax
+        run: find lib test examples -name "*.rb" -print0 | xargs -0 -n1 ruby -c
       - name: Test framework-independent reactive core
         run: ruby -Ilib test/core_test.rb
       - name: Verify independent consumer

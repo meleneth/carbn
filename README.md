@@ -1,5 +1,7 @@
 # Carbn
 
+**Carbn** is short for **carabiner**: it connects independent state and rendering systems without owning either one. 🔗
+
 Reactive state, dependency-driven invalidation, and ViewComponent rendering boundaries for Ruby.
 
 Carbn is independent of DSL editing, Prism, Rails applications and browsers. The optional `Carbn::ViewComponentRenderer` invokes real `ViewComponent::Base#render_in` and does not implement a replacement component language.

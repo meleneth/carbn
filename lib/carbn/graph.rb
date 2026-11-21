@@ -28,7 +28,7 @@ module Carbn
     def affected(changes)
       dirty = changes.map(&:to_sym)
       order.each do |name|
-        dirty << name if (derivations.fetch(name).dependencies.any? { |dep| dirty.include?(dep) }
+        dirty << name if derivations.fetch(name).dependencies.any? { |dep| dirty.include?(dep) }
       end
       regions.values.select { |region| region.dependencies.any? { |dep| dirty.include?(dep) } }.map(&:name)
     end
