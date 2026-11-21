@@ -16,7 +16,15 @@ module Carbn
     end
 
     def get(name)
-      @values.fetch(name.to_sym) { raise UnknownSignal, "Unknown signal #{name}" }
+      # Read-your-writes, including derived projections, inside a transaction.
+      values = if @transaction_depth.positive? && !@pending.empty?
+                 proposed = @values.merge(@pending)
+                 recalculate!(proposed)
+                 proposed
+               else
+                 @values
+               end
+      values.fetch(name.to_sym) { raise UnknownSignal, "Unknown signal #{name}" }
     end
 
     def snapshot

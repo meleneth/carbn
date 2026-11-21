@@ -40,6 +40,17 @@ class CarbnCoreTest < Minitest::Test
     assert_equal 1, seen.length
   end
 
+  def test_transaction_reads_its_own_writes
+    store = Carbn::Store.new(@graph)
+    store.transaction do
+      store.set(:value, 6)
+      assert_equal 6, store.get(:value)
+      assert_equal 12, store.get(:double)
+      assert_equal "demo: 12", store.get(:label)
+    end
+    assert_equal 1, store.revision
+  end
+
   def test_failed_derivation_rolls_back
     graph = Carbn::Graph.define do
       state :x, initial: 1
