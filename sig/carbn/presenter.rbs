@@ -1,0 +1,12 @@
+module Carbn
+  class Presenter
+    def initialize: (store: Store, renderer: untyped, regions: Hash[Symbol | String, untyped]) -> void
+    def render: (?Array[Symbol] affected) -> Hash[Symbol, untyped]
+    def subscribe: () { (Hash[Symbol, untyped] updates, Integer revision) -> untyped } -> Proc
+  end
+
+  class ViewComponentRenderer
+    def initialize: (?context: untyped) -> void
+    def render: (untyped component) -> String
+  end
+end
