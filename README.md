@@ -28,6 +28,16 @@ Transactions publish once at the outermost boundary. Derived values follow depen
 
 Run `ruby -Ilib test/core_test.rb` and `ruby examples/counter.rb`.
 
+## Static types and CI
+
+Carbn ships RBS contracts for its reactive graph, store and presenter APIs
+in `sig/carbn/`, included in the built gem. Consumers should load
+`library "carbn"` in Steep rather than declare local shadow interfaces.
+
+The internal GitLab CI retains Ruby core tests and Node workspace tests,
+and its `ruby_types` job runs RBS validation, Steep, and a packaged-gem
+signature check using Ruby 4.0.10 on Debian Trixie.
+
 ## Browser Git and workspace transactions
 
 Carbn also owns optional, framework-neutral browser workspace infrastructure:
