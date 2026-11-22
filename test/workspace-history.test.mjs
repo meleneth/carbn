@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {createWorkspaceHistory, createWorkspaceRevision} from "../browser/workspace-history.js";
+import {createWorkingTree} from "../browser/working-tree.js";
 
 class MemoryFS {
   constructor() {
@@ -107,6 +108,13 @@ function makeGit(fs) {
       const revisions = repositories.get(dir) || repositories.get(dir + "-next") || repo(dir);
       return [...revisions].reverse().map(item => ({oid: item.oid, commit: {message: item.message}}));
     },
+    async readBlob({dir, oid, filepath}) {
+      const revisions = repo(dir);
+      const revision = oid === "HEAD" ? revisions[revisions.length - 1] : revisions.find(item => item.oid === oid);
+      const blob = revision?.files.get(filepath);
+      if (!blob) throw Object.assign(new Error("missing blob"), {code: "NotFoundError"});
+      return {blob};
+    },
     async checkout({dir, ref}) {
       const revision = repo(dir).find(item => item.oid === ref);
       if (!revision) throw new Error("revision not found");
@@ -121,6 +129,34 @@ const encode = text => btoa(text);
 const phase = (message, writes, deletes = []) => ({
   message, writes: Object.fromEntries(Object.entries(writes).map(([key, value]) => [key, encode(value)])),
   deletes
+});
+
+test("Carbn working tree owns init, staging, commits, history, and byte-accurate workspace export", async () => {
+  const fs = new MemoryFS();
+  const git = makeGit(fs);
+  const worktree = createWorkingTree({fs, git, author, root: "/workspace"});
+  await worktree.initialize({branch: "main"});
+  assert.equal(await worktree.hasHead(), false);
+  fs.nodes.set("/workspace/mobilis.rb", new TextEncoder().encode("initial"));
+  fs.nodes.set("/workspace/.gitignore", new TextEncoder().encode(".carbn/\\n"));
+  assert.equal(await worktree.ensureInitialCommit({
+    paths: ["mobilis.rb", ".gitignore"], message: "initial"
+  }), true);
+  assert.equal(await worktree.ensureInitialCommit({
+    paths: ["mobilis.rb"], message: "should be ignored"
+  }), false);
+  assert.equal(await worktree.hasHead(), true);
+  fs.nodes.set("/workspace/mobilis.rb", new TextEncoder().encode("changed"));
+  assert.equal(new TextDecoder().decode(await worktree.readHead("mobilis.rb")), "initial");
+  await worktree.stageAll();
+  await worktree.commit("edit project");
+  assert.equal((await worktree.history()).length, 2);
+  assert.equal(new TextDecoder().decode(await worktree.readHead("mobilis.rb")), "changed");
+  const archive = await worktree.export({requiredPaths: ["mobilis.rb"]});
+  assert.equal(atob(archive["mobilis.rb"]), "changed");
+  assert.ok(archive[".git/HEAD"]);
+  await assert.rejects(worktree.commit(""), /commit message/);
+  await assert.rejects(worktree.export({requiredPaths: ["missing.rb"]}), /Required workspace file missing/);
 });
 
 test("preserves independent generated commits and exports Git objects byte-exact", async () => {
