@@ -1,0 +1,39 @@
+module Carbn
+  VERSION: String
+  class DefinitionError < StandardError
+  end
+  class UnknownSignal < DefinitionError
+  end
+
+  class Graph
+    class Derivation
+      attr_accessor name: Symbol
+      attr_accessor dependencies: Array[Symbol]
+      attr_accessor compute: Proc
+      def self.new: (name: Symbol, dependencies: Array[Symbol], compute: Proc) -> Derivation
+    end
+
+    class Region
+      attr_accessor name: Symbol
+      attr_accessor dependencies: Array[Symbol]
+      def self.new: (name: Symbol, dependencies: Array[Symbol]) -> Region
+    end
+
+    attr_reader initial: Hash[Symbol, untyped]
+    attr_reader derivations: Hash[Symbol, Derivation]
+    attr_reader regions: Hash[Symbol, Region]
+    attr_reader order: Array[Symbol]
+
+    def self.define: () { () [self: Builder] -> untyped } -> Graph
+    def initialize: (initial: Hash[Symbol, untyped], derivations: Hash[Symbol, Derivation], regions: Hash[Symbol, Region], order: Array[Symbol]) -> void
+    def affected: (Array[Symbol | String] changes) -> Array[Symbol]
+
+    class Builder
+      def initialize: () -> void
+      def state: (Symbol | String name, initial: untyped) -> untyped
+      def derive: (Symbol | String name, from: Symbol | String | Array[Symbol | String]) { (*untyped) -> untyped } -> Derivation
+      def region: (Symbol | String name, depends_on: Symbol | String | Array[Symbol | String]) -> Region
+      def build: () -> Graph
+    end
+  end
+end
