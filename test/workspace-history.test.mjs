@@ -159,6 +159,24 @@ test("Carbn working tree owns init, staging, commits, history, and byte-accurate
   await assert.rejects(worktree.export({requiredPaths: ["missing.rb"]}), /Required workspace file missing/);
 });
 
+test("Carbn publishes snapshot bytes atomically and preserves previous files on invalid input", async () => {
+  const fs = new MemoryFS();
+  const git = makeGit(fs);
+  const worktree = createWorkingTree({fs, git, author, root: "/workspace"});
+  await worktree.initialize();
+  await worktree.replaceFiles({
+    directory: "generate", scratch: ".carbn/snapshot",
+    files: {"cache/one.txt": new TextEncoder().encode("original")}
+  });
+  assert.equal(fs.text("/workspace/generate/cache/one.txt"), "original");
+  await assert.rejects(worktree.replaceFiles({
+    directory: "generate", scratch: ".carbn/snapshot",
+    files: {"../escape": new TextEncoder().encode("bad")}
+  }), /Unsafe/);
+  assert.equal(fs.text("/workspace/generate/cache/one.txt"), "original");
+  assert.equal(fs.nodes.has("/workspace/escape"), false);
+});
+
 test("preserves independent generated commits and exports Git objects byte-exact", async () => {
   const fs = new MemoryFS();
   const git = makeGit(fs);
