@@ -1,0 +1,24 @@
+# Internal GitLab runner pipeline. No GitHub Actions.
+stages:
+  - verify
+
+default:
+  tags:
+    - docker
+
+ruby_core:
+  stage: verify
+  image: ruby:4.0.10-trixie
+  script:
+    - find lib test examples -name "*.rb" -print0 | xargs -0 -n1 ruby -c
+    - ruby -Ilib test/core_test.rb
+    - ruby examples/counter.rb
+    - gem build carbn.gemspec
+
+browser_workspace:
+  stage: verify
+  image: node:22-trixie
+  script:
+    - node --check browser/git-capability.js
+    - node --check browser/workspace-history.js
+    - node --test test/workspace-history.test.mjs
