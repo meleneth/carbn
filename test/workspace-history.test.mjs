@@ -4,7 +4,7 @@ import {createWorkspaceHistory, createWorkspaceRevision} from "../browser/worksp
 
 class MemoryFS {
   constructor() {
-    this.nodes = new Map([["/", null], ["/workspace", null], ["/workspace/.carbn", null]]);
+    this.nodes = new Map([["/", null], ["/workspace", null], ["/workspace/.carbn", null], ["/workspace/.diesl", null]]);
     this.promises = {
       flush: async () => {},
       stat: async path => {
