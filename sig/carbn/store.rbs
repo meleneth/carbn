@@ -1,0 +1,14 @@
+module Carbn
+  class Store
+    attr_reader graph: Graph
+    attr_reader revision: Integer
+    def initialize: (Graph graph) -> void
+    def get: (Symbol | String name) -> untyped
+    def snapshot: () -> Hash[Symbol, untyped]
+    def subscribe: () { (Array[Symbol] regions, Integer revision) -> untyped } -> Proc
+    def set: (Symbol | String name, untyped value) -> untyped
+    def transaction: [T] () { (Store store) -> T } -> T
+    private
+    def recalculate!: (Hash[Symbol, untyped] values) -> untyped
+  end
+end
