@@ -21,4 +21,5 @@ browser_workspace:
   script:
     - node --check browser/git-capability.js
     - node --check browser/workspace-history.js
+    - node --check browser/working-tree.js
     - node --test test/workspace-history.test.mjs
