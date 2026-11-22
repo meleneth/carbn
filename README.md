@@ -28,4 +28,12 @@ Transactions publish once at the outermost boundary. Derived values follow depen
 
 Run `ruby -Ilib test/core_test.rb` and `ruby examples/counter.rb`.
 
-Not yet included: browser event transport, cursor/IME-aware DOM patching, or workspace/Git code.
+## Browser Git and workspace transactions
+
+Carbn also owns optional, framework-neutral browser workspace infrastructure:
+
+- `browser/git-capability.js` handles byte-safe isomorphic-git checkpoints.
+- `browser/workspace-history.js` publishes incremental generated repositories, exports Git objects, and restores revisions with dirty-tree checks and rollback.
+- Consumers supply filesystem, Git implementation, author, workspace roots, commit phases, and semantic validation. Nothing requires a particular DSL, browser UI, or Ruby runtime.
+
+Run `node --test test/workspace-history.test.mjs` to verify Git history, atomic publication, and rollback. Browser event transport and cursor/IME-aware DOM patching remain outside the core.
