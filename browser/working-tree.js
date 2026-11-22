@@ -81,6 +81,56 @@ export function createWorkingTree({fs, pfs = fs.promises, git, author, root}) {
         throw error;
       }
     },
+    // Atomically replace a generated snapshot without rewriting the authoring
+    // Git history. The caller supplies an ignored scratch directory.
+    async replaceFiles({directory, scratch, files}) {
+      validateWorkspacePath(directory);
+      validateWorkspacePath(scratch);
+      if (!files || Array.isArray(files) || typeof files !== "object")
+        throw new Error("Snapshot files must be a path-to-bytes map");
+      const target = root + "/" + directory;
+      const staging = root + "/" + scratch + "/next";
+      const previous = root + "/" + scratch + "/previous";
+      async function mkdirp(path) {
+        if (path === "/" || !path) return;
+        if (await exists(path)) return;
+        await mkdirp(path.slice(0, path.lastIndexOf("/")) || "/");
+        try { await pfs.mkdir(path); }
+        catch (error) { if (error.code !== "EEXIST") throw error; }
+      }
+      async function removeTree(path) {
+        if (!await exists(path)) return;
+        if ((await pfs.stat(path)).isDirectory()) {
+          for (const child of await pfs.readdir(path)) await removeTree(path + "/" + child);
+          await pfs.rmdir(path);
+        } else await pfs.unlink(path);
+      }
+      await removeTree(staging);
+      await removeTree(previous);
+      await mkdirp(staging);
+      try {
+        for (const [relative, bytes] of Object.entries(files).sort(([a], [b]) => a.localeCompare(b))) {
+          validateWorkspacePath(relative);
+          if (!(bytes instanceof Uint8Array)) throw new Error(`File ${relative} must contain bytes`);
+          const file = staging + "/" + relative;
+          await mkdirp(file.slice(0, file.lastIndexOf("/")));
+          await pfs.writeFile(file, bytes);
+        }
+        const hadPrevious = await exists(target);
+        if (hadPrevious) await pfs.rename(target, previous);
+        try {
+          await pfs.rename(staging, target);
+        } catch (error) {
+          if (hadPrevious) await pfs.rename(previous, target);
+          throw error;
+        }
+        await removeTree(previous);
+        await flush();
+      } catch (error) {
+        await removeTree(staging);
+        throw error;
+      }
+    },
     async export({requiredPaths = []} = {}) {
       if (!await this.hasHead()) throw new Error("Workspace has no Git history.");
       const entries = {};
